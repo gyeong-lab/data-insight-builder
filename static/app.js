@@ -51,8 +51,9 @@ function initPinLock() {
   const btnLock = document.getElementById("btnLockApp");
   let enteredPin = "";
 
-  // 세션에 이미 인증된 경우 잠금 해제 상태 유지
-  if (sessionStorage.getItem("data_insight_auth") === "true") {
+  // 이미 인증된 기기인지 확인 (로컬 스토리지 유지로 새로고침 시에도 풀림 방지)
+  const isAuth = localStorage.getItem("data_insight_auth") === "true" || sessionStorage.getItem("data_insight_auth") === "true";
+  if (isAuth) {
     if (overlay) overlay.classList.add("unlocked");
   } else {
     if (overlay) overlay.classList.remove("unlocked");
@@ -77,7 +78,8 @@ function initPinLock() {
 
     if (enteredPin.length === 4) {
       if (enteredPin === CORRECT_PIN) {
-        // 성공: 잠금 해제
+        // 성공: 잠금 해제 (localStorage에 저장하여 앱 종료 후 재실행 시에도 유지)
+        localStorage.setItem("data_insight_auth", "true");
         sessionStorage.setItem("data_insight_auth", "true");
         if (overlay) overlay.classList.add("unlocked");
         enteredPin = "";
@@ -139,6 +141,7 @@ function initPinLock() {
   // 상단 헤더 🔒 잠금 버튼
   if (btnLock) {
     btnLock.addEventListener("click", () => {
+      localStorage.removeItem("data_insight_auth");
       sessionStorage.removeItem("data_insight_auth");
       enteredPin = "";
       updateDots();

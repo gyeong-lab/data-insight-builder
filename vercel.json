@@ -6,8 +6,56 @@
   },
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/api/index"
+      "source": "/static/(.*)",
+      "destination": "/static/$1"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/favicon.ico"
+    },
+    {
+      "source": "/manifest.json",
+      "destination": "/manifest.json"
+    },
+    {
+      "source": "/sw.js",
+      "destination": "/sw.js"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/inspect",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/suggest",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/query",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/run",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/explain",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/followup",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/",
+      "destination": "/api/index.py"
     }
   ]
 }
