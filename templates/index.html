@@ -66,7 +66,10 @@
         <h1 class="logo-title">AI Data Insight Builder</h1>
         <span class="badge badge-sub">교육용 데이터 분석 웹앱</span>
       </div>
-      <div class="header-right-group" style="display: flex; align-items: center; gap: 0.75rem;">
+      <div class="header-right-group" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="btn btn-primary btn-sm pwa-header-btn" id="btnHeaderInstallPwa" style="display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 700; background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; box-shadow: 0 2px 6px rgba(37,99,235,0.3);">
+          📲 앱 설치
+        </button>
         <div class="server-status" id="serverStatusBadge">
           <span class="status-indicator" id="statusDot"></span>
           <span id="statusText">서버 연결 확인 중...</span>
@@ -482,6 +485,28 @@
         </div>
       </div>
     </section>
+
+    <!-- 📲 PWA 앱 설치 유도 플로팅 알림 배너 -->
+    <div class="pwa-install-banner" id="pwaInstallBanner" style="display: none;">
+      <div class="pwa-banner-card">
+        <div class="pwa-banner-header">
+          <img src="/static/icon-192.png" alt="DataInsight App Icon" class="pwa-banner-icon">
+          <div class="pwa-banner-text">
+            <h4 class="pwa-banner-title">📱 앱으로 더 편하게 이용하세요!</h4>
+            <p class="pwa-banner-desc">스마트폰 홈 화면이나 PC에 추가하면 주소창 없이 전체 화면으로 훨씬 빠르고 편리하게 사용할 수 있습니다.</p>
+          </div>
+          <button class="pwa-banner-close" id="btnBannerClose" aria-label="닫기">✕</button>
+        </div>
+        <div class="pwa-banner-actions">
+          <button class="btn btn-primary btn-sm" id="btnBannerInstall">
+            🚀 지금 앱 설치하기
+          </button>
+          <button class="btn btn-outline btn-sm" id="btnBannerDismiss">
+            나중에 하기
+          </button>
+        </div>
+      </div>
+    </div>
 
   </main>
 

@@ -27,6 +27,7 @@ const state = {
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[PAGE] 페이지 로드 완료");
   initPinLock();
+  initPwaInstallPrompt();
   initServerHealth();
   setupEventListeners();
 });
@@ -137,6 +138,88 @@ function initPinLock() {
       if (overlay) overlay.classList.remove("unlocked");
     });
   }
+}
+
+/**
+ * 📲 PWA 설치 유도 플로팅 배너 및 앱 설치 버튼 제어
+ */
+let deferredPwaPrompt = null;
+
+function initPwaInstallPrompt() {
+  const banner = document.getElementById("pwaInstallBanner");
+  const btnBannerInstall = document.getElementById("btnBannerInstall");
+  const btnBannerDismiss = document.getElementById("btnBannerDismiss");
+  const btnBannerClose = document.getElementById("btnBannerClose");
+  const btnHeaderInstall = document.getElementById("btnHeaderInstallPwa");
+
+  // 이미 독립형 PWA 앱으로 실행 중인지 확인
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isStandalone) {
+    if (btnHeaderInstall) btnHeaderInstall.style.display = "none";
+    if (banner) banner.style.display = "none";
+    console.log("[PWA] 현재 독립형 PWA 앱 모드로 실행 중입니다.");
+    return;
+  }
+
+  // 1. 브라우저의 PWA 설치 준비 이벤트 감지
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPwaPrompt = e;
+    console.log("[PWA] beforeinstallprompt 이벤트 포착 완료");
+
+    // 상단 헤더 '📲 앱 설치' 버튼 활성화
+    if (btnHeaderInstall) {
+      btnHeaderInstall.style.display = "inline-flex";
+    }
+
+    // 이번 세션에서 사용자가 닫은 적이 없다면 1.5초 후 하단 설치 알림 배너 팝업
+    if (!sessionStorage.getItem("pwa_install_dismissed") && banner) {
+      setTimeout(() => {
+        banner.style.display = "block";
+      }, 1500);
+    }
+  });
+
+  // 2. 앱 설치 실행 트리거 공통 함수
+  async function triggerInstall() {
+    if (deferredPwaPrompt) {
+      deferredPwaPrompt.prompt();
+      const choice = await deferredPwaPrompt.userChoice;
+      console.log("[PWA] 사용자 설치 선택:", choice.outcome);
+      if (choice.outcome === "accepted") {
+        if (banner) banner.style.display = "none";
+        if (btnHeaderInstall) btnHeaderInstall.style.display = "none";
+      }
+      deferredPwaPrompt = null;
+    } else {
+      // iOS 사파리나 브라우저 자동 처리를 위한 친절한 수동 설치 안내
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (isIOS) {
+        alert("📲 아이폰/아이패드 설치 방법:\n하단 공유 버튼(⎋)을 누른 후 '홈 화면에 추가'를 선택하시면 앱으로 설치됩니다!");
+      } else {
+        alert("📲 크롬 브라우저 상단 주소창 맨 오른쪽의 설치 아이콘(⬇️ 또는 모니터 모양)을 클릭하시면 즉시 앱으로 설치됩니다!");
+      }
+    }
+  }
+
+  if (btnBannerInstall) btnBannerInstall.addEventListener("click", triggerInstall);
+  if (btnHeaderInstall) btnHeaderInstall.addEventListener("click", triggerInstall);
+
+  // 3. 배너 닫기 및 나중에 하기
+  function dismissBanner() {
+    if (banner) banner.style.display = "none";
+    sessionStorage.setItem("pwa_install_dismissed", "true");
+  }
+
+  if (btnBannerDismiss) btnBannerDismiss.addEventListener("click", dismissBanner);
+  if (btnBannerClose) btnBannerClose.addEventListener("click", dismissBanner);
+
+  // 4. 앱 설치 완료 이벤트
+  window.addEventListener("appinstalled", () => {
+    console.log("[PWA] 앱 설치 성공적으로 완료됨");
+    if (banner) banner.style.display = "none";
+    if (btnHeaderInstall) btnHeaderInstall.style.display = "none";
+  });
 }
 
 /**
