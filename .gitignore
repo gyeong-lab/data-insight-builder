@@ -1,0 +1,20 @@
+# Python virtual environment
+.venv/
+venv/
+ENV/
+
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables (Sensitive: API Keys!)
+.env
+
+# Flask instance
+instance/
+
+# Temporary / OS files
+.DS_Store
+Thumbs.db
+*.tmp
