@@ -23,6 +23,14 @@ const state = {
   currentReportMarkdown: ""
 };
 
+// PWA beforeinstallprompt 조기 포착 (DOMContentLoaded 이전 브라우저 이벤트 누락 방지)
+let deferredPwaPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPwaPrompt = e;
+  console.log("[PWA] beforeinstallprompt 최상위 이벤트 포착 완료!");
+});
+
 // DOM 로드 완료 후 초기화
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[PAGE] 페이지 로드 완료");
@@ -143,83 +151,173 @@ function initPinLock() {
 /**
  * 📲 PWA 설치 유도 플로팅 배너 및 앱 설치 버튼 제어
  */
-let deferredPwaPrompt = null;
-
+/**
+ * 📲 PWA 설치 유도 플로팅 배너, 상단 모바일 카드, 상세 설치 가이드 모달 제어
+ */
 function initPwaInstallPrompt() {
   const banner = document.getElementById("pwaInstallBanner");
+  const mobileCard = document.getElementById("mobileAppInstallCard");
   const btnBannerInstall = document.getElementById("btnBannerInstall");
   const btnBannerDismiss = document.getElementById("btnBannerDismiss");
   const btnBannerClose = document.getElementById("btnBannerClose");
   const btnHeaderInstall = document.getElementById("btnHeaderInstallPwa");
+  const btnMainInstall = document.getElementById("btnMainInstallPwa");
+
+  const guideModal = document.getElementById("pwaGuideModal");
+  const btnGuideModalClose = document.getElementById("btnGuideModalClose");
+  const btnGuideModalConfirm = document.getElementById("btnGuideModalConfirm");
 
   // 이미 독립형 PWA 앱으로 실행 중인지 확인
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   if (isStandalone) {
     if (btnHeaderInstall) btnHeaderInstall.style.display = "none";
     if (banner) banner.style.display = "none";
+    if (mobileCard) mobileCard.style.display = "none";
     console.log("[PWA] 현재 독립형 PWA 앱 모드로 실행 중입니다.");
     return;
   }
 
-  // 1. 브라우저의 PWA 설치 준비 이벤트 감지
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPwaPrompt = e;
-    console.log("[PWA] beforeinstallprompt 이벤트 포착 완료");
+  // 상단 헤더 및 모바일 설치 카드 표시
+  if (btnHeaderInstall) btnHeaderInstall.style.display = "inline-flex";
+  if (mobileCard) mobileCard.style.display = "flex";
 
-    // 상단 헤더 '📲 앱 설치' 버튼 활성화
-    if (btnHeaderInstall) {
-      btnHeaderInstall.style.display = "inline-flex";
-    }
-
-    // 이번 세션에서 사용자가 닫은 적이 없다면 1.5초 후 하단 설치 알림 배너 팝업
-    if (!sessionStorage.getItem("pwa_install_dismissed") && banner) {
-      setTimeout(() => {
-        banner.style.display = "block";
-      }, 1500);
-    }
-  });
-
-  // 2. 앱 설치 실행 트리거 공통 함수
-  async function triggerInstall() {
-    if (deferredPwaPrompt) {
-      deferredPwaPrompt.prompt();
-      const choice = await deferredPwaPrompt.userChoice;
-      console.log("[PWA] 사용자 설치 선택:", choice.outcome);
-      if (choice.outcome === "accepted") {
-        if (banner) banner.style.display = "none";
-        if (btnHeaderInstall) btnHeaderInstall.style.display = "none";
-      }
-      deferredPwaPrompt = null;
-    } else {
-      // iOS 사파리나 브라우저 자동 처리를 위한 친절한 수동 설치 안내
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      if (isIOS) {
-        alert("📲 아이폰/아이패드 설치 방법:\n하단 공유 버튼(⎋)을 누른 후 '홈 화면에 추가'를 선택하시면 앱으로 설치됩니다!");
-      } else {
-        alert("📲 크롬 브라우저 상단 주소창 맨 오른쪽의 설치 아이콘(⬇️ 또는 모니터 모양)을 클릭하시면 즉시 앱으로 설치됩니다!");
-      }
-    }
+  // 세션 동안 닫은 적이 없다면 1초 후 하단 설치 알림 배너 팝업
+  if (!sessionStorage.getItem("pwa_install_dismissed") && banner) {
+    setTimeout(() => {
+      banner.style.display = "block";
+    }, 1200);
   }
 
-  if (btnBannerInstall) btnBannerInstall.addEventListener("click", triggerInstall);
-  if (btnHeaderInstall) btnHeaderInstall.addEventListener("click", triggerInstall);
+  // 모든 설치 버튼에 트리거 연결
+  const installTriggers = [btnBannerInstall, btnHeaderInstall, btnMainInstall];
+  installTriggers.forEach(btn => {
+    if (btn) btn.addEventListener("click", triggerInstall);
+  });
 
-  // 3. 배너 닫기 및 나중에 하기
+  // 배너 닫기 및 나중에 하기
   function dismissBanner() {
     if (banner) banner.style.display = "none";
     sessionStorage.setItem("pwa_install_dismissed", "true");
   }
-
   if (btnBannerDismiss) btnBannerDismiss.addEventListener("click", dismissBanner);
   if (btnBannerClose) btnBannerClose.addEventListener("click", dismissBanner);
 
-  // 4. 앱 설치 완료 이벤트
+  // 가이드 모달 닫기
+  function closeGuideModal() {
+    if (guideModal) guideModal.style.display = "none";
+  }
+  if (btnGuideModalClose) btnGuideModalClose.addEventListener("click", closeGuideModal);
+  if (btnGuideModalConfirm) btnGuideModalConfirm.addEventListener("click", closeGuideModal);
+  if (guideModal) {
+    guideModal.addEventListener("click", (e) => {
+      if (e.target === guideModal) closeGuideModal();
+    });
+  }
+
+  // 앱 설치 완료 이벤트
   window.addEventListener("appinstalled", () => {
     console.log("[PWA] 앱 설치 성공적으로 완료됨");
     if (banner) banner.style.display = "none";
+    if (mobileCard) mobileCard.style.display = "none";
     if (btnHeaderInstall) btnHeaderInstall.style.display = "none";
+    closeGuideModal();
   });
+}
+
+/**
+ * 앱 설치 실행 트리거:
+ * 1. 크롬/안드로이드 등 브라우저 지원 시 즉시 시스템 설치 팝업 실행
+ * 2. 아이폰 사파리 등 수동 추가 필요 환경에서는 상세 비주얼 모달 가이드 표시
+ */
+async function triggerInstall() {
+  console.log("[PWA] triggerInstall 실행. deferredPwaPrompt 존재:", !!deferredPwaPrompt);
+
+  if (deferredPwaPrompt) {
+    try {
+      deferredPwaPrompt.prompt();
+      const choice = await deferredPwaPrompt.userChoice;
+      console.log("[PWA] 사용자 설치 선택 결과:", choice.outcome);
+      if (choice.outcome === "accepted") {
+        const banner = document.getElementById("pwaInstallBanner");
+        const mobileCard = document.getElementById("mobileAppInstallCard");
+        const btnHeaderInstall = document.getElementById("btnHeaderInstallPwa");
+        if (banner) banner.style.display = "none";
+        if (mobileCard) mobileCard.style.display = "none";
+        if (btnHeaderInstall) btnHeaderInstall.style.display = "none";
+      }
+      deferredPwaPrompt = null;
+      return;
+    } catch (err) {
+      console.warn("[PWA] native prompt 실행 실패:", err);
+    }
+  }
+
+  // deferredPwaPrompt가 없는 경우 (iOS 사파리 또는 브라우저 정책 환경)
+  openInstallGuideModal();
+}
+
+/**
+ * 상세 설치 가이드 모달 오픈
+ */
+function openInstallGuideModal() {
+  const guideModal = document.getElementById("pwaGuideModal");
+  const modalBody = document.getElementById("pwaGuideModalBody");
+  const badge = document.getElementById("pwaGuideOsBadge");
+  if (!guideModal || !modalBody) return;
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  if (isIOS) {
+    if (badge) badge.textContent = "아이폰 / 아이패드 (Safari)";
+    modalBody.innerHTML = `
+      <div class="pwa-step-list">
+        <div class="pwa-step-row">
+          <div class="pwa-step-badge">1</div>
+          <div class="pwa-step-text">
+            사파리 브라우저 하단 중앙의 <strong>공유 버튼(사각형 위로 화살표 모양 ⎋)</strong>을 터치하세요.
+          </div>
+        </div>
+        <div class="pwa-step-row">
+          <div class="pwa-step-badge">2</div>
+          <div class="pwa-step-text">
+            나타난 메뉴 목록을 아래로 살짝 내려 <strong>'홈 화면에 추가 (➕)'</strong> 항목을 선택하세요.
+          </div>
+        </div>
+        <div class="pwa-step-row">
+          <div class="pwa-step-badge">3</div>
+          <div class="pwa-step-text">
+            우측 상단의 <strong>'추가'</strong>를 누르면 스마트폰 바탕화면에 단독 앱으로 즉시 설치됩니다!
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    if (badge) badge.textContent = "안드로이드 / 크롬 브라우저";
+    modalBody.innerHTML = `
+      <div class="pwa-step-list">
+        <div class="pwa-step-row">
+          <div class="pwa-step-badge">1</div>
+          <div class="pwa-step-text">
+            브라우저 우측 상단 <strong>더보기(점 3개 ⋮) 메뉴</strong>를 터치하세요.
+          </div>
+        </div>
+        <div class="pwa-step-row">
+          <div class="pwa-step-badge">2</div>
+          <div class="pwa-step-text">
+            메뉴 항목 중 <strong>'앱 설치'</strong> 또는 <strong>'홈 화면에 추가'</strong>를 터치하세요.
+          </div>
+        </div>
+        <div class="pwa-step-row">
+          <div class="pwa-step-badge">3</div>
+          <div class="pwa-step-text">
+            확인 팝업에서 <strong>'설치'</strong>를 누르면 스마트폰 바탕화면과 앱 목록에 앱이 생성됩니다!
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  guideModal.style.display = "flex";
 }
 
 /**

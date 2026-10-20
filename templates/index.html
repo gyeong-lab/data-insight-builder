@@ -16,7 +16,7 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Custom CSS (캐시 방지 버전 파라미터 적용) -->
-  <link rel="stylesheet" href="/static/style.css?v=20261020_4">
+  <link rel="stylesheet" href="/static/style.css?v=20261020_5">
 </head>
 <body>
 
@@ -87,6 +87,20 @@
     <div class="info-banner">
       <span class="info-icon">ℹ️</span>
       <span>본 시스템은 데이터 프라이버시를 위해 CSV를 디스크에 영구 저장하지 않고 <strong>서버 메모리에만 1개 데이터셋을 임시 보관</strong>합니다. 서버가 재시작되면 데이터는 초기화됩니다.</span>
+    </div>
+
+    <!-- 📲 모바일 전용 앱 설치 유도 카드 (눈에 가장 잘 띄는 상단 배치) -->
+    <div class="mobile-app-install-card" id="mobileAppInstallCard">
+      <div class="mobile-app-install-content">
+        <img src="/static/icon-192.png" alt="DataInsight App Icon" class="mobile-app-icon">
+        <div class="mobile-app-info">
+          <div class="mobile-app-title">📱 스마트폰 홈 화면에 앱 설치하기</div>
+          <div class="mobile-app-desc">주소창 없이 전체 화면 앱으로 훨씬 빠르고 편리하게 사용할 수 있습니다.</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm btn-main-pwa-install pwa-install-trigger" id="btnMainInstallPwa">
+        🚀 지금 앱 설치
+      </button>
     </div>
 
     <!-- 진행 단계 (Steppers) -->
@@ -493,16 +507,38 @@
           <img src="/static/icon-192.png" alt="DataInsight App Icon" class="pwa-banner-icon">
           <div class="pwa-banner-text">
             <h4 class="pwa-banner-title">📱 앱으로 더 편하게 이용하세요!</h4>
-            <p class="pwa-banner-desc">스마트폰 홈 화면이나 PC에 추가하면 주소창 없이 전체 화면으로 훨씬 빠르고 편리하게 사용할 수 있습니다.</p>
+            <p class="pwa-banner-desc">스마트폰 홈 화면에 추가하면 주소창 없이 전체 화면 앱으로 훨씬 빠르고 편리하게 사용할 수 있습니다.</p>
           </div>
           <button class="pwa-banner-close" id="btnBannerClose" aria-label="닫기">✕</button>
         </div>
         <div class="pwa-banner-actions">
-          <button class="btn btn-primary btn-sm" id="btnBannerInstall">
+          <button class="btn btn-primary btn-sm pwa-install-trigger" id="btnBannerInstall">
             🚀 지금 앱 설치하기
           </button>
           <button class="btn btn-outline btn-sm" id="btnBannerDismiss">
             나중에 하기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 📱 PWA 설치 상세 안내 모달 (수동 홈 화면 추가 가이드용) -->
+    <div class="pwa-guide-modal-overlay" id="pwaGuideModal" style="display: none;">
+      <div class="pwa-guide-modal-card">
+        <div class="pwa-guide-modal-header">
+          <img src="/static/icon-192.png" alt="DataInsight App Icon" class="pwa-guide-modal-icon">
+          <div class="pwa-guide-modal-title-box">
+            <h3 class="pwa-guide-modal-title">스마트폰에 앱 설치하기</h3>
+            <span class="pwa-guide-modal-badge" id="pwaGuideOsBadge">간편 홈 화면 추가</span>
+          </div>
+          <button class="pwa-guide-modal-close" id="btnGuideModalClose" aria-label="닫기">✕</button>
+        </div>
+        <div class="pwa-guide-modal-body" id="pwaGuideModalBody">
+          <!-- JS에서 OS별 상세 안내 동적 렌더링 -->
+        </div>
+        <div class="pwa-guide-modal-footer">
+          <button class="btn btn-primary" id="btnGuideModalConfirm" style="width: 100%; justify-content: center;">
+            확인했습니다
           </button>
         </div>
       </div>
@@ -515,7 +551,7 @@
   </footer>
 
   <!-- 프론트엔드 앱 스크립트 연결 (캐시 방지 버전 파라미터 적용) -->
-  <script src="/static/app.js?v=20261020_4"></script>
+  <script src="/static/app.js?v=20261020_5"></script>
 
   <!-- PWA Service Worker 등록 스크립트 (최신 업데이트 강제 동기화) -->
   <script>
