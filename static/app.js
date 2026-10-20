@@ -7,8 +7,8 @@
  * 4. Chart.js 연동을 통한 동적 차트 렌더링
  */
 
-// 전역 상태 관리 객체
-const API_BASE = (window.location.protocol === "file:" || !window.location.origin.includes(":5000"))
+// 전역 상태 관리 객체 (배포 환경 및 로컬 환경 자동 대응)
+const API_BASE = window.location.protocol === "file:"
   ? "http://127.0.0.1:5000"
   : "";
 
@@ -493,7 +493,7 @@ async function startInspect() {
   } catch (err) {
     console.error("[ERROR] 진단 오류:", err);
     if (err.message && (err.message.includes("Failed to fetch") || err.name === "TypeError")) {
-      alert("진단 실패: 서버(http://127.0.0.1:5000)에 연결할 수 없습니다.\n\n1. 터미널에서 Flask 백엔드 서버가 실행 중인지 확인해 주세요.\n2. 브라우저 주소창이 'http://127.0.0.1:5000'인지 확인해 주세요.");
+      alert("진단 실패: 서버와 통신할 수 없습니다.\n\n네트워크 연결 및 서버 동작 상태를 확인해 주세요.");
     } else {
       alert(`진단 실패: ${err.message}`);
     }
