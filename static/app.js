@@ -320,12 +320,15 @@ function openInstallGuideModal() {
   guideModal.style.display = "flex";
 }
 
+let lastHealthError = null;
+
 /**
- * 1. 서버 헬스체크 (/health) - 자동 재시도 및 캐시 무효화 적용
+ * 1. 서버 헬스체크 (/health) - 자동 재시도, 상세 원인 표기 및 캐시 무효화 적용
  */
 async function initServerHealth(isRetry = false) {
   const dot = document.getElementById("statusDot");
   const text = document.getElementById("statusText");
+  const badge = document.getElementById("serverStatusBadge");
 
   try {
     const healthUrl = `${API_BASE}/health?_t=${Date.now()}`;
@@ -338,8 +341,15 @@ async function initServerHealth(isRetry = false) {
       throw new Error(`HTTP ${res.status}`);
     }
 
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      const rawText = await res.text();
+      throw new Error(`JSON 응답이 아님 (HTML 반환됨)`);
+    }
+
     const data = await res.json();
     console.log("[HEALTH] 헬스체크 성공 응답:", data);
+    lastHealthError = null;
 
     if (data.status === "healthy" || data.status === "ok" || data.api_key_configured !== undefined) {
       if (dot) dot.className = "status-indicator online";
@@ -351,14 +361,44 @@ async function initServerHealth(isRetry = false) {
     }
   } catch (err) {
     console.error("[ERROR] 서버 헬스체크 실패:", err);
+    lastHealthError = {
+      message: err.message,
+      url: `${API_BASE}/health`,
+      origin: window.location.origin
+    };
+
     // Vercel 서버리스 콜드 스타트나 네트워크 지연 대응: 첫 실패 시 1.5초 후 1회 자동 재시도
     if (!isRetry) {
       if (text) text.textContent = "서버 연결 시도 중...";
       setTimeout(() => initServerHealth(true), 1500);
       return;
     }
+
     if (dot) dot.className = "status-indicator error";
-    if (text) text.textContent = "서버 연결 불가";
+    if (text) {
+      const shortErr = err.message.length > 25 ? err.message.substring(0, 25) + "..." : err.message;
+      text.textContent = `서버 연결 불가 (${shortErr})`;
+      text.title = `오류 상세: ${err.message} (터치하여 확인)`;
+    }
+  }
+
+  // 상태 배지 클릭/터치 시 상세 원인 안내 팝업
+  if (badge && !badge.dataset.hasListener) {
+    badge.dataset.hasListener = "true";
+    badge.style.cursor = "pointer";
+    badge.addEventListener("click", () => {
+      if (lastHealthError) {
+        alert(
+          `⚠️ 서버 연결 상태 안내\n\n` +
+          `• 현재 접속 주소: ${lastHealthError.origin}\n` +
+          `• 요청 API: ${lastHealthError.url}\n` +
+          `• 발생 오류: ${lastHealthError.message}\n\n` +
+          `💡 스마트폰 접속 안내:\n` +
+          `1. PC 로컬 서버 테스트 시 스마트폰 브라우저에 'http://10.20.32.184:5000'을 입력하세요.\n` +
+          `2. Vercel 배포 주소 접속 시 약 1분 후 새로고침하세요.`
+        );
+      }
+    });
   }
 }
 

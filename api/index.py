@@ -26,19 +26,27 @@ class VercelWSGIWrapper:
             params = parse_qs(query_string, keep_blank_values=True)
             if "__vercel_path__" in params and params["__vercel_path__"]:
                 raw_p = params["__vercel_path__"][0]
-                if raw_p and not raw_p.startswith(":"):
+                if raw_p and not raw_p.startswith(":") and not raw_p.startswith("/$") and raw_p != "/$1":
                     extracted_path = raw_p
                 del params["__vercel_path__"]
                 environ["QUERY_STRING"] = urlencode(params, doseq=True)
 
-        # 2. Vercel 원본 요청 헤더 폴백 확인
-        header_path = (
-            environ.get("HTTP_X_VERCEL_ORIGINAL_PATH")
-            or environ.get("REQUEST_URI")
-            or environ.get("RAW_URI")
-            or environ.get("HTTP_X_FORWARDED_URI")
-            or environ.get("HTTP_X_ORIGINAL_URI")
-        )
+        # 2. Vercel 원본 요청 헤더 폴백 확인 (x-matched-path, x-invoke-path 최우선 확인)
+        header_path = None
+        for key in (
+            "HTTP_X_MATCHED_PATH",
+            "HTTP_X_INVOKE_PATH",
+            "HTTP_X_VERCEL_ORIGINAL_PATH",
+            "HTTP_X_FORWARDED_URI",
+            "HTTP_X_ORIGINAL_URI",
+            "HTTP_X_ORIGINAL_URL",
+            "REQUEST_URI",
+            "RAW_URI"
+        ):
+            val = environ.get(key)
+            if val and val not in ("/api/index", "/api/index.py", "/api", "/api/"):
+                header_path = val
+                break
 
         target_path = extracted_path or header_path or environ.get("PATH_INFO", "")
 
