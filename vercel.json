@@ -6,8 +6,8 @@
   },
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/api/index.py?__vercel_path__=/$1"
+      "source": "/((?!static/|manifest.json|sw.js|favicon.ico).*)",
+      "destination": "/api/index?__vercel_path__=/$1"
     }
   ]
 }

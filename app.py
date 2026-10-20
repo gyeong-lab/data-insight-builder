@@ -20,8 +20,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("DataInsightBuilder")
 
-# 3. Flask 앱 생성
-app = Flask(__name__)
+# 3. Flask 앱 생성 (Vercel Serverless 및 로컬 공통 호환을 위해 절대 경로 지정)
+base_dir = os.path.abspath(os.path.dirname(__file__))
+app = Flask(
+    __name__,
+    template_folder=os.path.join(base_dir, "templates"),
+    static_folder=os.path.join(base_dir, "static")
+)
 
 # 환경변수 읽기
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
@@ -281,6 +286,9 @@ def diagnose_dataframe(df: pd.DataFrame, filename: str, file_size_kb: float, enc
 
 
 @app.route("/", methods=["GET"])
+@app.route("/api/index", methods=["GET"])
+@app.route("/api/index.py", methods=["GET"])
+@app.route("/api", methods=["GET"])
 def index():
     """메인 페이지 반환 (templates/index.html)"""
     return render_template("index.html")
