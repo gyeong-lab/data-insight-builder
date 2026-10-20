@@ -223,26 +223,44 @@ function initPwaInstallPrompt() {
 }
 
 /**
- * 1. 서버 헬스체크 (/health)
+ * 1. 서버 헬스체크 (/health) - 자동 재시도 및 캐시 무효화 적용
  */
-async function initServerHealth() {
+async function initServerHealth(isRetry = false) {
   const dot = document.getElementById("statusDot");
   const text = document.getElementById("statusText");
 
   try {
-    const res = await fetch(`${API_BASE}/health`);
+    const healthUrl = `${API_BASE}/health?_t=${Date.now()}`;
+    const res = await fetch(healthUrl, {
+      cache: "no-store",
+      headers: { "Pragma": "no-cache", "Cache-Control": "no-cache" }
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
     const data = await res.json();
-    if (res.ok && data.status === "healthy") {
-      dot.className = "status-indicator online";
-      text.textContent = `온라인 (${data.model} 준비됨)`;
+    console.log("[HEALTH] 헬스체크 성공 응답:", data);
+
+    if (data.status === "healthy" || data.status === "ok" || data.api_key_configured !== undefined) {
+      if (dot) dot.className = "status-indicator online";
+      const modelName = data.model || "Gemini 3.5";
+      if (text) text.textContent = `온라인 (${modelName} 준비됨)`;
     } else {
-      dot.className = "status-indicator error";
-      text.textContent = "서버 상태 이상";
+      if (dot) dot.className = "status-indicator error";
+      if (text) text.textContent = "서버 상태 이상";
     }
   } catch (err) {
     console.error("[ERROR] 서버 헬스체크 실패:", err);
-    dot.className = "status-indicator error";
-    text.textContent = "서버 연결 불가";
+    // Vercel 서버리스 콜드 스타트나 네트워크 지연 대응: 첫 실패 시 1.5초 후 1회 자동 재시도
+    if (!isRetry) {
+      if (text) text.textContent = "서버 연결 시도 중...";
+      setTimeout(() => initServerHealth(true), 1500);
+      return;
+    }
+    if (dot) dot.className = "status-indicator error";
+    if (text) text.textContent = "서버 연결 불가";
   }
 }
 

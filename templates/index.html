@@ -15,8 +15,8 @@
 
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="/static/style.css">
+  <!-- Custom CSS (캐시 방지 버전 파라미터 적용) -->
+  <link rel="stylesheet" href="/static/style.css?v=20261020_4">
 </head>
 <body>
 
@@ -514,15 +514,18 @@
     <p>AI Data Insight Builder &copy; 2026. Educational Data Analysis Web App powered by Flask, Pandas, and Gemini API.</p>
   </footer>
 
-  <!-- 프론트엔드 앱 스크립트 연결 -->
-  <script src="/static/app.js"></script>
+  <!-- 프론트엔드 앱 스크립트 연결 (캐시 방지 버전 파라미터 적용) -->
+  <script src="/static/app.js?v=20261020_4"></script>
 
-  <!-- PWA Service Worker 등록 스크립트 -->
+  <!-- PWA Service Worker 등록 스크립트 (최신 업데이트 강제 동기화) -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('[PWA] Service Worker 등록 완료. 스코프:', reg.scope))
+          .then(reg => {
+            console.log('[PWA] Service Worker 등록 완료. 스코프:', reg.scope);
+            reg.update();
+          })
           .catch(err => console.warn('[PWA] Service Worker 등록 실패:', err));
       });
     }

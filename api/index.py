@@ -49,6 +49,8 @@ class VercelWSGIWrapper:
         # api/index 직접 호출이거나 빈 경로일 경우 루트('/')로 복원
         if not target_path or target_path in ("/api/index", "/api/index.py", "/api", "/api/", "/index.py", "/index"):
             target_path = "/"
+        elif target_path.startswith("/api/index/"):
+            target_path = "/" + target_path[len("/api/index/"):]
 
         # 이중 슬래시 정규화 및 시작 슬래시 보장
         while target_path.startswith("//"):

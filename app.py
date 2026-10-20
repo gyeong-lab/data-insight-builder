@@ -295,12 +295,14 @@ def index():
 
 
 @app.route("/health", methods=["GET"])
+@app.route("/api/health", methods=["GET"])
 def health():
     """서버 상태와 API Key 설정 여부만 반환 (키 값은 반환 금지)"""
     api_key_configured = bool(GEMINI_API_KEY and len(GEMINI_API_KEY) > 10)
     logger.info(f"[RESPONSE] status=200 health_check api_key_configured={api_key_configured}")
     return jsonify({
         "status": "healthy",
+        "ok": True,
         "api_key_configured": api_key_configured,
         "model": GEMINI_MODEL,
         "max_upload_mb": MAX_UPLOAD_MB
@@ -323,6 +325,7 @@ def service_worker():
 
 
 @app.route("/inspect", methods=["POST"])
+@app.route("/api/inspect", methods=["POST"])
 def inspect():
     """
     CSV 업로드, 인코딩·헤더 자동 감지, 13개 항목 상세 진단 결과 JSON 반환
@@ -518,6 +521,7 @@ def get_feasible_tool_catalog(df: pd.DataFrame, diag: dict) -> list[dict]:
 
 
 @app.route("/suggest", methods=["POST"])
+@app.route("/api/suggest", methods=["POST"])
 def suggest():
     """
     진단 결과를 Gemini에 전달하고, 현재 데이터에서 실제로 실행 가능한 검증된 도구 카탈로그 중에서만
@@ -865,6 +869,7 @@ def detect_target_country_from_query(query: str, available_labels: list[str]):
 
 
 @app.route("/query", methods=["POST"])
+@app.route("/api/query", methods=["POST"])
 def natural_language_query():
     """
     사용자의 자연어 질문을 받아
@@ -1119,6 +1124,7 @@ def natural_language_query():
 
 
 @app.route("/run", methods=["POST"])
+@app.route("/api/run", methods=["POST"])
 def run_tool():
     """
     선택된 도구를 Pandas로 직접 실행합니다.
@@ -1206,6 +1212,7 @@ def run_tool():
 
 
 @app.route("/explain", methods=["POST"])
+@app.route("/api/explain", methods=["POST"])
 def explain_results():
     """
     계산 결과에 대한 Gemini AI 해석을 생성합니다.
@@ -1359,6 +1366,7 @@ def explain_results():
 
 
 @app.route("/followup", methods=["POST"])
+@app.route("/api/followup", methods=["POST"])
 def followup():
     """보고서 및 분석 결과에 대한 후속 질문 Q&A 처리"""
     data = request.get_json() or {}
@@ -1495,5 +1503,5 @@ def followup():
 if __name__ == "__main__":
     flask_debug = os.getenv("FLASK_DEBUG", "true").lower() == "true"
     port = int(os.getenv("PORT", 5000))
-    logger.info(f"서버 실행: http://127.0.0.1:{port} (debug={flask_debug})")
-    app.run(host="127.0.0.1", port=port, debug=flask_debug)
+    logger.info(f"서버 실행: http://0.0.0.0:{port} (debug={flask_debug})")
+    app.run(host="0.0.0.0", port=port, debug=flask_debug)
